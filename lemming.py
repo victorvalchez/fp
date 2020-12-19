@@ -1,4 +1,5 @@
 import pyxel
+from score import GameScore
 
 
 class GameLemmings:
@@ -10,8 +11,8 @@ class GameLemmings:
         self.y = y * 16
         self.pos_counter = 0
         self.grounds = grounds
-        self.saved = 0
         self.umbrella_state = False
+        self.score = GameScore(0, 0, 0)
 
     def ground(self, p0, p1):
         if -1 < p0 < 256 and -1 < p1 < 256:
@@ -23,7 +24,6 @@ class GameLemmings:
             return True
 
     def exit(self, x, y):
-        self.saved += 1
         if -1 < x < 256 and -1 < y < 256:
             if self.grounds[int(x) // 16][int(y) // 16] == 3:
                 return True
@@ -59,6 +59,15 @@ class GameLemmings:
         else:
             return True
 
+    def blocker(self, x, y):
+        if -1 < x < 256 and -1 < y < 256:
+            if self.grounds[int(x) // 16][int(y) // 16] == 7:
+                return True
+            else:
+                return False
+        else:
+            return True
+
     # update position
     def update(self, l_lemmingsU, i):
         if -1 < self.x < 256 and -1 < self.y < 256:
@@ -76,6 +85,8 @@ class GameLemmings:
                     self.y += 16
                     self.pos_counter += 1
                     if self.pos_counter > 1:
+                        self.score.died_value += 1
+                        self.score.alive_value -= 1
                         del (l_lemmingsU[i])
                 # To move it to the right when the next cell isn't a block
                 if not self.ground(self.x, self.y + 16) and self.ground(self.x + 16, self.y):
@@ -85,6 +96,8 @@ class GameLemmings:
                     self.direct = -1
                 #To save the lemmings
                 if self.exit(self.x - 16, self.y):
+                    self.score.saved_value += 1
+                    self.score.alive_value -= 1
                     del (l_lemmingsU[i])
                 #To go up to the right with the ladder
                 if self.ladder_r(self.x, self.y):
@@ -99,6 +112,9 @@ class GameLemmings:
                         if self.ladder_l(self.x, self.y + 16):
                             self.x += 16
                             self.y += 16
+                #To change direction if there's a blocker
+                if self.blocker(self.x + 16, self.y):
+                    self.direct = -1
             # MOVEMENT CHARACTERISTICS FOR THE LEFT
             else:
                 # To make the lemming fall with the umbrella:
@@ -113,6 +129,8 @@ class GameLemmings:
                     self.y += 16
                     self.pos_counter += 1
                     if self.pos_counter > 1:
+                        self.score.died_value += 1
+                        self.score.alive_value -= 1
                         del (l_lemmingsU[i])
                 # To move it to the left when the next cell isn't a block
                 if not self.ground(self.x, self.y + 16) and self.ground(self.x - 16, self.y):
@@ -122,6 +140,8 @@ class GameLemmings:
                     self.direct = 1
                 #To save the lemmings
                 if self.exit(self.x + 16, self.y):
+                    self.score.saved_value += 1
+                    self.score.alive_value -= 1
                     del (l_lemmingsU[i])
                 #To go up to the left with the ladder
                 if self.ladder_l(self.x, self.y):
@@ -135,7 +155,12 @@ class GameLemmings:
                         if self.ladder_r(self.x, self.y + 16):
                             self.x -= 16
                             self.y += 16
+                #To change direction if there's a blocker
+                if self.blocker(self.x - 16, self.y):
+                    self.direct = 1
         else:
+            self.score.died_value += 1
+            self.score.alive_value -= 1
             del (l_lemmingsU[i])
 
     def draw(self, l_lemmingsD, i):
@@ -145,5 +170,7 @@ class GameLemmings:
         elif self.pos_counter > 0:
             pyxel.blt(self.x, self.y, 0, 16, 0, 16, 16, colkey=0)
             del (l_lemmingsD[i])
+
         else:
             pyxel.blt(self.x, self.y, 0, 16, 0, 16, 16, colkey=0)
+
